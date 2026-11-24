@@ -1,4 +1,5 @@
 # xiaomi-custom-card
-karta oczyszczacza xiaomi 3h
-markdown
-![Podgląd karty](purifier card.png)
+
+Karta oczyszczacza powietrza **Xiaomi Mi Air Purifier 3H** dla Home Assistant (oparta na `custom:button-card` i grafice SVG).
+
+![Podgląd karty](purifier%20card.png)
