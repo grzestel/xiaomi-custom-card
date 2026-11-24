@@ -1,0 +1,214 @@
+type: custom:button-card
+entity: fan.mi_air_purifier_3_3h
+variables:
+  pm25_entity: sensor.mi_air_purifier_3_3h_pm2_5
+  temp_entity: sensor.mi_air_purifier_3_3h_temperatura
+  hum_entity: sensor.mi_air_purifier_3_3h_wilgotnosc
+  brightness_entity: select.mi_air_purifier_3_3h_led_brightness
+show_name: false
+show_icon: false
+show_state: false
+tap_action:
+  action: none
+hold_action:
+  action: more-info
+styles:
+  card:
+    - background: none
+    - box-shadow: none
+    - border: none
+    - padding: 0
+    - max-width: 240px
+    - margin: 0 auto
+    - border-radius: 22px
+    - overflow: hidden
+  grid:
+    - grid-template-areas: '"purifier"'
+    - grid-template-columns: 1fr
+    - grid-template-rows: 1fr
+    - position: relative
+  custom_fields:
+    purifier:
+      - width: 100%
+      - display: block
+      - transform-origin: 50% 24%
+      - transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)
+    btn_brightness:
+      - position: absolute
+      - left: 23.33%
+      - top: 25.17%
+      - transform: translate(-50%, -50%)
+      - width: 32px
+      - height: 32px
+      - z-index: 2
+      - overflow: visible
+    btn_mode:
+      - position: absolute
+      - left: 76.67%
+      - top: 25.17%
+      - transform: translate(-50%, -50%)
+      - width: 32px
+      - height: 32px
+      - z-index: 2
+      - overflow: visible
+extra_styles: >
+  :host { cursor: zoom-in; }
+
+  :host(.zoomed) { cursor: zoom-out; }
+
+  :host(.zoomed) #purifier { transform: scale(2.0); }
+
+  :host(.zoomed) #oled-dial { cursor: default; }
+
+  #btn_brightness, #btn_mode { pointer-events: none; opacity: 0; transition:
+  opacity 0.25s; }
+
+  :host(.zoomed) #btn_brightness, :host(.zoomed) #btn_mode { pointer-events:
+  auto; opacity: 1; }
+custom_fields:
+  purifier: |
+    [[[
+      const isOn = entity?.state === 'on';
+      const pmVal = Math.round(parseFloat(states[variables.pm25_entity]?.state)) || 0;
+      const pmText = String(pmVal).padStart(3, '0');
+      const t = parseFloat(states[variables.temp_entity]?.state), h = parseFloat(states[variables.hum_entity]?.state);
+      const tempText = !isNaN(t) ? Math.round(t) + '°C' : '--°C';
+      const humText = !isNaN(h) ? Math.round(h) + '%' : '--%';
+      const barColor = pmVal > 50 ? '#ef4444' : (pmVal > 20 ? '#f59e0b' : '#22c55e');
+      const led = (states[variables.brightness_entity]?.state || '').toLowerCase();
+      let scrOp = '1', btnOp = '1';
+      if (!isOn || led === 'off' || led === 'wyłączono') { scrOp = '0.15'; btnOp = '0.4'; }
+      else if (led === 'dim' || led === 'ciemne') { scrOp = '0.5'; btnOp = '0.7'; }
+      const preset = (entity?.attributes?.preset_mode || '').toLowerCase();
+      let modeIcon = '<circle cx="3.5" cy="3.5" r="3.5" fill="none" stroke="#d1d5db" stroke-width="0.8"/><path d="M 3.5 5.2 L 2.1 3.8 A 0.9 0.9 0 0 1 3.5 2.7 A 0.9 0.9 0 0 1 4.9 3.8 Z" fill="none" stroke="#d1d5db" stroke-width="0.7"/>';
+      if (preset.includes('auto')) modeIcon = '<circle cx="3.5" cy="3.5" r="3.5" fill="none" stroke="#d1d5db" stroke-width="0.8"/><text x="3.5" y="5.1" font-family="sans-serif" font-size="4.6" fill="#d1d5db" text-anchor="middle">A</text>';
+      else if (preset.includes('sleep') || preset.includes('noc') || preset.includes('cichy')) modeIcon = '<circle cx="3.5" cy="3.5" r="3.5" fill="none" stroke="#d1d5db" stroke-width="0.8"/><path d="M 4.1 1.7 A 1.9 1.9 0 1 0 5.3 4.5 A 1.5 1.5 0 1 1 4.1 1.7 Z" fill="#d1d5db"/>';
+      return `<svg viewBox="0 0 240 480" style="width:100%;height:auto;display:block" onclick="this.getRootNode().host.classList.toggle('zoomed')">
+        <defs>
+          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f2f3f5"/><stop offset="50%" stop-color="#fff"/><stop offset="100%" stop-color="#e5e7eb"/></linearGradient>
+          <linearGradient id="topGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#d1d5db"/><stop offset="100%" stop-color="#f3f4f6"/></linearGradient>
+          <pattern id="perf" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.4" fill="#9ca3af" opacity="0.65"/><circle cx="8" cy="8" r="1.4" fill="#9ca3af" opacity="0.65"/></pattern>
+        </defs>
+        <rect x="34" y="458" width="24" height="10" rx="4" fill="#4b5563"/><rect x="182" y="458" width="24" height="10" rx="4" fill="#4b5563"/>
+        <rect x="20" y="20" width="200" height="440" rx="22" fill="url(#bodyGrad)" stroke="#d1d5db" stroke-width="2"/>
+        <path d="M 38 20 L 202 20 C 212 20 218 25 218 32 L 22 32 C 22 25 28 20 38 20 Z" fill="url(#topGrad)"/>
+        <line x1="45" y1="25" x2="195" y2="25" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <g id="oled-dial" onclick="if(this.getRootNode().host.classList.contains('zoomed'))event.stopPropagation()">
+          <circle cx="120" cy="115" r="46" fill="#1f2428" stroke="#e5e7eb" stroke-width="3"/>
+          <g style="opacity:${scrOp};transition:opacity .3s">
+            <text x="120" y="116" font-family="sans-serif" font-size="22" font-weight="300" fill="#fff" text-anchor="middle" letter-spacing="1">${pmText}</text>
+            <g font-family="sans-serif" font-size="7.5" fill="#d1d5db">
+              <text x="108" y="132" text-anchor="end">${tempText}</text><text x="125" y="132" text-anchor="end">${humText}</text>
+              <g transform="translate(127,126)" stroke="#d1d5db" stroke-width="0.9" fill="none" stroke-linecap="round"><path d="M 0 2 Q 3.5 -1 7 2"/><path d="M 1.5 3.8 Q 3.5 2 5.5 3.8"/><circle cx="3.5" cy="5.5" r="0.6" fill="#d1d5db" stroke="none"/></g>
+              <g transform="translate(137,125.5)">${modeIcon}</g>
+            </g>
+            <rect x="111" y="142" width="18" height="2" rx="1" fill="${barColor}"/>
+          </g>
+          <g style="opacity:${btnOp};transition:opacity .3s">
+            <circle cx="88" cy="118" r="8" fill="none" stroke="#9ca3af" stroke-width="0.8"/><circle cx="88" cy="118" r="3" fill="none" stroke="#d1d5db" stroke-width="1"/>
+            <line x1="88" y1="112" x2="88" y2="113.5" stroke="#d1d5db" stroke-width="0.9"/><line x1="88" y1="122.5" x2="88" y2="124" stroke="#d1d5db" stroke-width="0.9"/>
+            <line x1="82" y1="118" x2="83.5" y2="118" stroke="#d1d5db" stroke-width="0.9"/><line x1="92.5" y1="118" x2="94" y2="118" stroke="#d1d5db" stroke-width="0.9"/>
+            <circle cx="152" cy="118" r="8" fill="none" stroke="#9ca3af" stroke-width="0.8"/><circle cx="152" cy="118" r="4.5" fill="none" stroke="#d1d5db" stroke-width="0.9"/>
+          </g>
+        </g>
+        <g transform="translate(113,172)" fill="#9ca3af"><path d="M 0 0 H 8 V 7 H 6 V 2 H 4.5 V 7 H 2.5 V 2 H 2 V 7 H 0 Z"/><rect x="10" y="0" width="2" height="7"/></g>
+        <rect x="34" y="215" width="172" height="220" rx="8" fill="url(#perf)"/>
+      </svg>`;
+    ]]]
+  btn_brightness:
+    card:
+      type: custom:button-card
+      entity: select.mi_air_purifier_3_3h_led_brightness
+      icon: mdi:brightness-5
+      show_name: false
+      show_icon: true
+      show_state: false
+      show_label: true
+      label: >-
+        [[[ const m = { bright: "jasne", dim: "ciemne", off: "wyłączono" };
+        return "Jasność: " + (m[entity?.state] || entity?.state || "nieznana");
+        ]]]
+      tap_action:
+        action: call-service
+        service: select.select_option
+        service_data:
+          entity_id: select.mi_air_purifier_3_3h_led_brightness
+          option: |
+            [[[
+              const opts = entity?.attributes?.options || ['bright', 'dim', 'off'];
+              return opts.at((opts.indexOf(entity?.state) + 1) % opts.length);
+            ]]]
+      styles:
+        card:
+          - background: transparent
+          - box-shadow: none
+          - border: none
+          - border-radius: 50%
+          - padding: 0
+          - width: 32px
+          - height: 32px
+          - overflow: visible
+        icon:
+          - width: 18px
+          - height: 18px
+          - color: '#ffffff'
+      extra_styles: >
+        #label { position: absolute; bottom: 38px; left: 50%; transform:
+        translateX(-50%); background: #111827; color: #fff; border: 1px solid
+        #4b5563; border-radius: 6px; padding: 3px 7px; font-size: 11px;
+        white-space: nowrap; opacity: 0; pointer-events: none; transition:
+        opacity .2s; z-index: 10; }
+
+        :host(:hover) ha-card { background: rgba(255,255,255,.16); box-shadow: 0
+        0 0 1.5px #fff; }
+
+        :host(:hover) #label { opacity: 1; }
+  btn_mode:
+    card:
+      type: custom:button-card
+      entity: fan.mi_air_purifier_3_3h
+      icon: mdi:circle-outline
+      show_name: false
+      show_icon: true
+      show_state: false
+      show_label: true
+      label: >-
+        [[[ return "Tryb: " + (entity?.state === "on" ?
+        (entity.attributes?.preset_mode || "Włączony") : "Wyłączony"); ]]]
+      tap_action:
+        action: call-service
+        service: fan.set_preset_mode
+        service_data:
+          entity_id: fan.mi_air_purifier_3_3h
+          preset_mode: |
+            [[[
+              const m = entity?.attributes?.preset_modes || ['Auto', 'Cichy', 'Ulubiony'];
+              return entity?.state === 'off' ? m.at(0) : m.at((m.indexOf(entity?.attributes?.preset_mode) + 1) % m.length);
+            ]]]
+      hold_action:
+        action: toggle
+      styles:
+        card:
+          - background: transparent
+          - box-shadow: none
+          - border: none
+          - border-radius: 50%
+          - padding: 0
+          - width: 32px
+          - height: 32px
+          - overflow: visible
+        icon:
+          - width: 20px
+          - height: 20px
+          - color: '#ffffff'
+      extra_styles: >
+        #label { position: absolute; bottom: 38px; left: 50%; transform:
+        translateX(-50%); background: #111827; color: #fff; border: 1px solid
+        #4b5563; border-radius: 6px; padding: 3px 7px; font-size: 11px;
+        white-space: nowrap; opacity: 0; pointer-events: none; transition:
+        opacity .2s; z-index: 10; }
+
+        :host(:hover) ha-card { background: rgba(255,255,255,.16); box-shadow: 0
+        0 0 1.5px #fff; }
+
+        :host(:hover) #label { opacity: 1; }
